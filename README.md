@@ -27,7 +27,15 @@ If a previous Blue Taxi build is already installed and Android blocks the update
 
 ## Driver app
 
-The driver Android APK is not posted in this release yet.
+| | |
+| --- | --- |
+| App | Blue Taxi Driver |
+| Version | 1.0.0-beta (36) |
+| Package | `com.app.bluetaxi.driver` |
+| File | [blue-taxi-driver-v1.0.0-beta.apk](https://github.com/zerosyslabs/bluetaxi-app/releases/download/v1.0.0-beta/blue-taxi-driver-v1.0.0-beta.apk) |
+| Requires | Android 7.0 or later |
+
+The office creates the driver login. Use the same install steps as the customer app, then open **Blue Taxi Driver**.
 
 ## iPhone
 
