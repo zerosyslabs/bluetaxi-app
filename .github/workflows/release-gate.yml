@@ -1,0 +1,75 @@
+name: Release gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [created, published, edited, released, prereleased]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to check, for example v1.0.0-beta
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-scripts:
+    name: Checker tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run release checker tests
+        run: node --test scripts/check-release.test.mjs
+      - name: Lint committed changelogs
+        run: node scripts/check-release.mjs --changelog-dir changelogs
+
+  check-release:
+    name: Release notes and APK names
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            TAG="$EVENT_TAG"
+          else
+            TAG="$INPUT_TAG"
+          fi
+          NOTES="$(mktemp)"
+          ASSETS_FILE="$(mktemp)"
+          gh release view "$TAG" --json tagName,body,assets \
+            --jq '{tag: .tagName, body: .body, assets: [.assets[].name]}' > "$ASSETS_FILE"
+          python3 - <<PY
+          import json, pathlib, os, subprocess, sys
+          data = json.loads(pathlib.Path("$ASSETS_FILE").read_text())
+          notes_path = pathlib.Path("$NOTES")
+          notes_path.write_text(data["body"] or "")
+          args = [
+              "node",
+              "scripts/check-release.mjs",
+              "--tag",
+              data["tag"],
+              "--notes-file",
+              str(notes_path),
+          ]
+          for name in data["assets"]:
+              args.extend(["--apk", name])
+          print("Checking", data["tag"], "assets:", ", ".join(data["assets"]) or "(none)")
+          raise SystemExit(subprocess.call(args))
+          PY

@@ -44,3 +44,27 @@ iPhone builds stay in TestFlight and the App Store. This repository is Android o
 ## Why this repository exists
 
 Google Play has not approved the listing yet. GitHub Releases is the official sideload channel until the store listing is live. APKs are attached to [releases](https://github.com/zerosyslabs/bluetaxi-app/releases). They are not committed to git.
+
+## Upload a new APK
+
+Changelog notes are required. The release check fails if an APK is missing notes, uses a placeholder bullet, or has the wrong filename.
+
+1. Copy `.github/release-template.md` to `changelogs/vVERSION.md`.
+2. Fill in the filename, package, version, and changelog bullets for every APK in that release.
+3. Commit the changelog.
+4. Upload with the script. Do not use a raw `gh release upload`.
+
+```bash
+scripts/upload-apk.sh --tag vVERSION \
+  --apk /path/to/blue-taxi-vVERSION.apk \
+  --apk /path/to/blue-taxi-driver-vVERSION.apk
+```
+
+Filenames must match the tag:
+
+| App | Filename |
+| --- | --- |
+| Customer | `blue-taxi-vVERSION.apk` |
+| Driver | `blue-taxi-driver-vVERSION.apk` |
+
+The **Release gate** workflow checks the notes and names on every new upload.
